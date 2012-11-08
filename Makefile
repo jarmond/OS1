@@ -11,8 +11,9 @@ all: boot
 boot: boot.img
 
 boot.img: bootldr kernel
-	dd bs=512 count=2880 if=kernel.bin of=$@
-	dd bs=512 count=1 conv=notrunc if=bootldr of=$@
+	dd if=/dev/zero bs=1k count=1440 of=$@
+	dd if=bootldr bs=512 count=1 of=$@ conv=notrunc
+	dd if=kernel.bin bs=512 seek=1 count=1440 of=$@ conv=notrunc
 
 # Assemble bootloader.
 bootldr: bootldr.asm

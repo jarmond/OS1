@@ -1,5 +1,5 @@
-;;; Simple bootloader for OS
-;;; (c)2011 J. W. Armond
+;;; Simple bootloader for jOS
+;;; (c)2012 J. W. Armond
 ;;; Written for NASM
 
 ;;; Memory map
@@ -36,7 +36,7 @@
         gdt_base        dd      0x1000
 
         kernel_tracks   equ     31
-        kernel          equ     0xf00
+        kernel_seg      equ     0xf00
         disk_buf        equ     0x800
 
 start:  
@@ -89,49 +89,44 @@ start:
         jz      a20_fail
 
         ;; Load kernel into memory
+        xchg    bx, bx
         mov     si, loading
         call    print_message
-        push    ds
         mov     ah, 0           ; floppy controller reset
         int     0x13
         mov     cx, 1           ; track counter
         mov     dh, 0           ; start with head 0
-        mov     dl, [drive_num]
-        mov     bx, kernel      ; kernel preload segment, increment by 0x100
-        mov     ds, bx
-        mov     bx, disk_buf    ; disk buffer
+        mov     dl, [drive_num] ; drive number
+        mov     bx, kernel_seg  ; kernel preload segment
         mov     es, bx
         mov     bx, 0           ; segment offset
 
 read_track:     
-        push    cx
         mov     ah, 0x02        ; read sectors
         mov     al, 18          ; # sectors to read
         shl     cx, 8           ; track to read to ch
         mov     cl, 1           ; sector to start
         int     0x13
 
-        push    bx
-        mov     ax, 0x0e2e      ; print dot        
-        mov     bx, 0x07
-        int     0x10
-        pop     bx
         
         cmp     dh, 0           ; if head 0, do head 1
         jnz     goto_next_track
         inc     dh              ; set head 1
         add     bx, 0x240       ; set disk buffer offset for next head
         jmp     read_track
+
+        ;; Print track dot
+        mov     ax, 0x0e2e
+        mov     bx, 0x07
+        int     0x10
+
 goto_next_track:
-        push    es              ; dst and src are other way around in copy_buffer_chunk
-        push    ds
-        mov     cx, 0x120       ; this many dwords in buffer to copy
-        call    copy_buffer_chunk
-        
-        add     ax, 0x480       ; increment segment selector by 0x4800 bytes
+        mov     bx, es
+        add     bx, 0x480       ; increment segment selector by 0x4800 bytes
                                 ; = 1 track, 2 heads, 18 sectors
+        mov     es, bx
         mov     dh, 0           ; return to head 0
-        pop     cx              ; restore track counter
+        shr     cx, 8           ; restore track counter
         inc     cx              ; move to next track
         cmp     cx, kernel_tracks
         jnz     read_track      
@@ -163,7 +158,6 @@ goto_next_track:
         mov     ax, 0xcf
         mov     [ds:si+6], ax
 
-        pop     ds
         cli
         lgdt    [gdt_limit]
 
@@ -173,7 +167,7 @@ goto_next_track:
         mov     cr0, eax
 
         ;; Load kernel
-        jmp     kernel
+        jmp dword kernel_seg:0
         
 disk_fail:
         mov     si, disk_error
@@ -193,19 +187,8 @@ idle:
         hlt
         jmp     idle
 
-;;; Copy bytes (dword multiple) buffer chunk from source offset to dst offset.
-;;; void copy_buffer_chunk(int nbytes, int src, int dst);
-;;; In: nbytes (cx), src (sp+2), dst (sp)
-;;; Uses registers: bp, cx, es, ds, si, di
-copy_buffer_chunk:
-        mov     bp, sp
-        mov     ds, [bp+2]
-        mov     es, [bp]
-        mov     si, 0
-        mov     di, 0
-        rep movsd
-        ret     4
 
+;;; SUBROUTINES
         
 ;;; Clear screen
 clear_screen:   
