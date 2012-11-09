@@ -32,12 +32,13 @@ kernel_asm: ${ASRC}
 	nasm -f macho -l $@.lst -o $@.o $<
 
 
-# Compile kernel.
+# Compile kernel and strip header.
 kernel: kernel_main kernel_c kernel_asm
 #	ld $(CSRC:.c=.o) -o $@.bin --oformat=binary -Ttext=0x100000
-	ld kernel.o kernel_asm.o $(CSRC:.c=.o) -o $@.bin -U start -arch i386 -macosx_version_min 10.5 -r
+	ld kernel.o kernel_asm.o $(CSRC:.c=.o) -o $@_1.bin -U start -arch i386 -macosx_version_min 10.5 -r
+	dd if=$@_1.bin of=$@.bin ibs=240 skip=1
 
 
 clean:
-	rm -f bootldr *.lst boot.img *.o
+	rm -f bootldr *.lst boot.img *.o *.bin
 

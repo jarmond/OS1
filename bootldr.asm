@@ -5,7 +5,6 @@
 ;;; Memory map
 ;;; 100000 Top of low memory
 ;;; 00f000-09f000 Kernel preload (576 kb)
-;;; 008000-00c7ff Disk buffer (18432 bytes)
 ;;; 007c00-007dff Bootloader (512 bytes)
 ;;; 006000-007000 Real-mode stack
 ;;; 001000 GDT 8-byte aligned
@@ -32,11 +31,13 @@
         newline         db      13,10,0
         drive_num       db      0
 
-        gdt_limit       dw      24 ; 3 8-byte descriptor
-        gdt_base        dd      0x1000
+        gdt_limit       dw      40      ; 5 8-byte descriptors
+        gdt_base        dd      0x100
 
         kernel_tracks   equ     31
         kernel_seg      equ     0xf00
+        kernel_off      equ     0x0
+        kernel_start    equ     0xf000
         disk_buf        equ     0x800
 
 start:  
@@ -89,7 +90,6 @@ start:
         jz      a20_fail
 
         ;; Load kernel into memory
-        xchg    bx, bx
         mov     si, loading
         call    print_message
         mov     ah, 0           ; floppy controller reset
@@ -99,13 +99,14 @@ start:
         mov     dl, [drive_num] ; drive number
         mov     bx, kernel_seg  ; kernel preload segment
         mov     es, bx
-        mov     bx, 0           ; segment offset
 
-read_track:     
-        mov     ah, 0x02        ; read sectors
-        mov     al, 18          ; # sectors to read
+read_track:
         shl     cx, 8           ; track to read to ch
         mov     cl, 1           ; sector to start
+        mov     bx, 0           ; segment offset
+read_head:      
+        mov     ah, 0x02        ; read sectors
+        mov     al, 18          ; # sectors to read
         int     0x13
 
         
@@ -113,7 +114,7 @@ read_track:
         jnz     goto_next_track
         inc     dh              ; set head 1
         add     bx, 0x240       ; set disk buffer offset for next head
-        jmp     read_track
+        jmp     read_head
 
         ;; Print track dot
         mov     ax, 0x0e2e
@@ -122,7 +123,7 @@ read_track:
 
 goto_next_track:
         mov     bx, es
-        add     bx, 0x480       ; increment segment selector by 0x4800 bytes
+        add     bx, 0x48        ; increment buffer addr by 0x480 bytes
                                 ; = 1 track, 2 heads, 18 sectors
         mov     es, bx
         mov     dh, 0           ; return to head 0
@@ -131,43 +132,62 @@ goto_next_track:
         cmp     cx, kernel_tracks
         jnz     read_track      
         
-
+        xchg    bx, bx
+        
         ;; Prepare GDT
+        cli
+        mov     ax, gdt_base
+        mov     ds, ax
         mov     si, 0
         ;; Null descriptor
         mov     [ds:si], dword 0 
         mov     [ds:si+4], dword 0
 
-        ;; Code descriptor
+        ;; DPL0 Code descriptor
         add     si, 8
         mov     [ds:si], word 0xffff ; segment limit (low 16 bits) = 4GB
         mov     [ds:si+2], word 0    ; base address (low word) = 0
-                             ; al: base address (high word-low byte) = 0
-        mov     ax, 0x9800   ; ah: DPL 0, execute-only, present, code segment
-        mov     [ds:si+4], ax
-        mov     ax, 0xcf     ; segment limit (high 4 bits), 32-bit
-                             ; 4kb granularity
-        mov     [ds:si+6], ax
+        mov     [ds:si+4], word 0x9800 ; al: base address (high word-low byte) = 0
+                                       ; ah: DPL 0, execute-only, present,
+                                       ;     code segment
+        mov     [ds:si+6], word 0xcf ; segment limit (high 4 bits), 32-bit
+                                     ; 4kb granularity
 
-        ;; Data descriptor: as above except expand-up, data-segment
+        ;; DPL0 Data descriptor: as above except expand-up, data-segment
         add     si, 8
         mov     [ds:si], word 0xffff
         mov     [ds:si+2], word 0
-        mov     ax, 0x9200
-        mov     [ds:si+4], ax
-        mov     ax, 0xcf
-        mov     [ds:si+6], ax
+        mov     [ds:si+4], word 0x9200
+        mov     [ds:si+6], word 0xcf
 
-        cli
+        ;; DPL3 Code descriptor
+        add     si, 8
+
+        ;; DPL3 Data descriptor
+        add     si, 8
+        
         lgdt    [gdt_limit]
-
+        sti
+        
         ;; Set protected mode
         mov     eax, cr0
         or      eax, 1
         mov     cr0, eax
 
+        xchg    bx, bx
+
+        ;; Reload segment registers
+        jmp     0x08:reload_cs  ; DPL0 code descriptor
+reload_cs:
+        mov     ax, 0x10        ; DPL0 data descriptor
+        mov     ds, ax
+        mov     es, ax
+        mov     fs, ax
+        mov     gs, ax
+        mov     ss, ax
+        
         ;; Load kernel
-        jmp dword kernel_seg:0
+        jmp dword 0:kernel_start
         
 disk_fail:
         mov     si, disk_error
