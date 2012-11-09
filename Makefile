@@ -3,7 +3,7 @@
 CC=gcc
 AS=nasm
 
-CSRC=kernel.c
+CSRC=
 ASRC=asm.asm
 
 all: boot
@@ -19,9 +19,13 @@ boot.img: bootldr kernel
 bootldr: bootldr.asm
 	nasm -f bin -l $@.lst -o $@ bootldr.asm
 
+# Compile kernel main.
+kernel_main: kernel.c
+	gcc -m32 -nostdlib -c $<
+
 # Compile kernel C source.
 kernel_c: ${CSRC}
-	gcc -m32 -nostdlib -c $<
+#	gcc -m32 -nostdlib -c $<
 
 # Compile kernel assembly.
 kernel_asm: ${ASRC}
@@ -29,9 +33,9 @@ kernel_asm: ${ASRC}
 
 
 # Compile kernel.
-kernel: kernel_c kernel_asm
+kernel: kernel_main kernel_c kernel_asm
 #	ld $(CSRC:.c=.o) -o $@.bin --oformat=binary -Ttext=0x100000
-	ld kernel_asm.o $(CSRC:.c=.o) -o $@.bin -U start -arch i386 -macosx_version_min 10.5
+	ld kernel.o kernel_asm.o $(CSRC:.c=.o) -o $@.bin -U start -arch i386 -macosx_version_min 10.5 -r
 
 
 clean:
