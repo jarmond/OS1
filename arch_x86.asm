@@ -53,6 +53,16 @@ setup_gdt:
         lgdt    [gdt_limit]
         sti
 
+        jmp     0x08:reload_cs  ; set cs to Ring0 code descriptor
+reload_cs:
+        mov     ax, 0x10        ; set data segment registers to Ring0
+                                ; data descriptor
+        mov     ds, ax
+        mov     es, ax
+        mov     fs, ax
+        mov     gs, ax
+        mov     ss, ax
+        ret
         
 outb:
         push    ebp
