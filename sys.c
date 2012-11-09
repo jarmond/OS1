@@ -4,8 +4,9 @@
 #define VGA_LINES 25
 #define VGA_COLUMNS 80
 #define VGA_CHARSIZE 2
-#define VGA_COLOR 0x2a
+#define VGA_COLOR 0xa
 
+#include "arch_x86.h"
 
 inline volatile char* vga_ptr_offset(int line, int cursor)
 {
@@ -19,25 +20,24 @@ void kprint(const char* s)
     static int vga_line = 0;
 
     while (*s != '\0') {
-        // Handle new lines.
         if (*s == '\n') {
+            // Handle new lines.
             ++vga_line;
             vga_cursor = 0;
-            continue;
+        } else {
+            // Cursor location.
+            volatile char* vga_ptr = vga_ptr_offset(vga_line, vga_cursor);
+            *vga_ptr++ = *s;
+            *vga_ptr = VGA_COLOR;
+
+            ++vga_cursor;
+            // Wrap line.
+            if (vga_cursor >= VGA_COLUMNS) {
+                ++vga_line;
+                vga_cursor = 0;
+            }
         }
 
-        // Wrap line.
-        if (vga_cursor == VGA_COLUMNS) {
-            ++vga_line;
-            vga_cursor = 0;
-        }
-
-        // Cursor location.
-        volatile char* vga_ptr = vga_ptr_offset(vga_line, vga_cursor);
-        *vga_ptr++ = *s;
-        *vga_ptr = VGA_COLOR;
-
-        ++vga_cursor;
         ++s;
     }
 }

@@ -4,7 +4,7 @@ CC=/Users/jon/oscross/bin/i586-elf-gcc
 LD=/Users/jon/oscross/bin/i586-elf-ld
 AS=nasm
 
-CFLAGS=-Wall -m32 -nostdlib
+CFLAGS=-Wall -Wextra -Werror -m32 -nostdlib -fno-builtin -nostartfiles -nodefaultlibs
 
 
 CSRC=sys.c

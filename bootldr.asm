@@ -22,7 +22,7 @@
         nop
         
         ;; Data
-        version         db      'JWA OS',13,10,0
+        version         db      'jOS',13,10,0
         a20_error       db      'A20 err',13,10,0
         disk_error      db      'Disk err ',13,10,0
         drive_num       db      0
