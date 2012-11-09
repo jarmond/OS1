@@ -1,6 +1,7 @@
 # Makefile for OS
 
-CC=gcc
+CC=/Users/jon/oscross/bin/i586-elf-gcc
+LD=/Users/jon/oscross/bin/i586-elf-ld
 AS=nasm
 
 CSRC=
@@ -21,22 +22,22 @@ bootldr: bootldr.asm
 
 # Compile kernel main.
 kernel_main: kernel.c
-	gcc -m32 -nostdlib -c $<
+	${CC} -m32 -nostdlib -o $@.o -c $<
 
 # Compile kernel C source.
 kernel_c: ${CSRC}
 #	gcc -m32 -nostdlib -c $<
 
 # Compile kernel assembly.
-kernel_asm: ${ASRC}
-	nasm -f macho -l $@.lst -o $@.o $<
+arch_x86: arch_x86.asm
+	${AS} -f elf32 -l $@.lst -o $@.o $<
 
 
 # Compile kernel and strip header.
-kernel: kernel_main kernel_c kernel_asm
-#	ld $(CSRC:.c=.o) -o $@.bin --oformat=binary -Ttext=0x100000
-	ld kernel.o kernel_asm.o $(CSRC:.c=.o) -o $@_1.bin -U start -arch i386 -macosx_version_min 10.5 -r
-	dd if=$@_1.bin of=$@.bin ibs=240 skip=1
+kernel: kernel_main kernel_c arch_x86
+	${LD} kernel_main.o arch_x86.o $(CSRC:.c=.o) -o $@.bin --oformat=binary -Ttext=0x0 -e 0x0
+#	${LD} kernel.o kernel_asm.o $(CSRC:.c=.o) -o $@_1.bin -U start -arch i386 -macosx_version_min 10.5 -segaddr _text 0x1000
+#	dd if=$@_1.bin of=$@.bin ibs=3776 skip=1
 
 
 clean:

@@ -31,9 +31,6 @@
         newline         db      13,10,0
         drive_num       db      0
 
-        gdt_limit       dw      40      ; 5 8-byte descriptors
-        gdt_base        dd      0x100
-
         kernel_tracks   equ     31
         kernel_seg      equ     0xf00
         kernel_off      equ     0x0
@@ -105,10 +102,8 @@ read_track:
         mov     cl, 1           ; sector to start
         mov     bx, 0           ; segment offset
 read_head:      
-        mov     ah, 0x02        ; read sectors
-        mov     al, 18          ; # sectors to read
+        mov     ax, 0x0212      ; ah=0x02 (read sectors), al=18 sectors
         int     0x13
-
         
         cmp     dh, 0           ; if head 0, do head 1
         jnz     goto_next_track
@@ -117,7 +112,7 @@ read_head:
         jmp     read_head
 
         ;; Print track dot
-        mov     ax, 0x0e2e
+        mov     ax, 0x0e2e      ; ah=0x0e, al='.'
         mov     bx, 0x07
         int     0x10
 
@@ -132,43 +127,6 @@ goto_next_track:
         cmp     cx, kernel_tracks
         jnz     read_track      
         
-        xchg    bx, bx
-        
-        ;; Prepare GDT
-        cli
-        mov     ax, gdt_base
-        mov     ds, ax
-        mov     si, 0
-        ;; Null descriptor
-        mov     [ds:si], dword 0 
-        mov     [ds:si+4], dword 0
-
-        ;; DPL0 Code descriptor
-        add     si, 8
-        mov     [ds:si], word 0xffff ; segment limit (low 16 bits) = 4GB
-        mov     [ds:si+2], word 0    ; base address (low word) = 0
-        mov     [ds:si+4], word 0x9800 ; al: base address (high word-low byte) = 0
-                                       ; ah: DPL 0, execute-only, present,
-                                       ;     code segment
-        mov     [ds:si+6], word 0xcf ; segment limit (high 4 bits), 32-bit
-                                     ; 4kb granularity
-
-        ;; DPL0 Data descriptor: as above except expand-up, data-segment
-        add     si, 8
-        mov     [ds:si], word 0xffff
-        mov     [ds:si+2], word 0
-        mov     [ds:si+4], word 0x9200
-        mov     [ds:si+6], word 0xcf
-
-        ;; DPL3 Code descriptor
-        add     si, 8
-
-        ;; DPL3 Data descriptor
-        add     si, 8
-        
-        lgdt    [gdt_limit]
-        sti
-        
         ;; Set protected mode
         mov     eax, cr0
         or      eax, 1
@@ -177,9 +135,9 @@ goto_next_track:
         xchg    bx, bx
 
         ;; Reload segment registers
-        jmp     0x08:reload_cs  ; DPL0 code descriptor
+        jmp     0x08:reload_cs  ; Ring0 code descriptor
 reload_cs:
-        mov     ax, 0x10        ; DPL0 data descriptor
+        mov     ax, 0x10        ; Ring3 data descriptor
         mov     ds, ax
         mov     es, ax
         mov     fs, ax

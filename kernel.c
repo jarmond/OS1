@@ -1,6 +1,6 @@
 /* Kernel C source. */
 
-#include "asm.h"
+#include "arch_x86.h"
 
 void __start()
 {
