@@ -7,7 +7,7 @@ AS=nasm
 CFLAGS=-Wall -Wextra -Werror -m32 -nostdlib -fno-builtin -nostartfiles -nodefaultlibs
 
 
-CSRC=sys.c
+CSRC=sys.c vga.c
 COBJ=$(CSRC:.c=.o)
 ASRC=arch_x86.asm
 
