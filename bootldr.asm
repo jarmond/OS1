@@ -4,12 +4,17 @@
 
 ;;; Memory map
 ;;; 100000 Top of low memory
-;;; 00f000-09f000 Kernel preload (576 kb)
+;;; 0a0000-0fffff Video memory
+;;; 09fc00-09ffff Extended BIOS data area
+;;; 00f000-09fc00 Kernel preload (576 kb)
+;;; 00d000-00efff Extended bootloader (8 kb)
 ;;; 008000-00c800 Disk buffer (18432 bytes = 36 sectors == 1 track)
 ;;; 007c00-007dff Bootloader (512 bytes)
 ;;; 006000-007000 Real-mode stack
-;;; 001000 GDT 8-byte aligned
-;;; 000000 Reserved
+;;; 002000-003000 Memory map
+;;; 001000-001020 GDT 8-byte aligned
+;;; 000400-0004ff BIOS data area
+;;; 000000-0003ff Real mode IVT
 
 ;;; Disk map
 ;;; t0 h0 s1             bootloader
@@ -35,6 +40,9 @@
         kernel_start    equ     0xf000
         disk_buf        equ     0x800
         disk_buf_size   equ     0x4800
+        mmap_start      equ     0x200
+        mmap_entry_size equ     24
+        mmap_magic      equ     0x534d4150
 
 start:  
         mov     ax, 0x7c0       ; bootloaders loaded from 0x7c00
@@ -59,7 +67,7 @@ start:
         ;; Set cursor to top left
         mov     ah, 0x02
         mov     bh, 0
-        mov     dx, 0
+        xor     dx, dx
         int     0x10
         
         ;; Print some infomation
@@ -89,7 +97,7 @@ start:
 read_track:
         shl     cx, 8           ; track to read to ch
         mov     cl, 1           ; sector to start
-        mov     bx, 0           ; segment offset
+        xor     bx, bx          ; segment offset
 read_head:      
         mov     ax, 0x0212      ; ah=0x02 (read sectors), al=18 sectors
         int     0x13
@@ -129,13 +137,39 @@ goto_next_track:
         pop     ds
 
         
+        ;; Read memory map
+        push    es
+        mov     ax, mmap_start
+        mov     es, ax
+        xor     di, di
+        xor     ebx, ebx
+        mov     edx, mmap_magic
+
+read_mmap_entry:       
+        mov     eax, 0xe820     ; memory detect function
+        mov     ecx, mmap_entry_size
+        int     0x15
+
+        xchg    bx,bx
+        jcxz    read_mmap_entry ; skip zero length entries
+        jc      read_mmap_end   ; if CF set, list end
+        cmp     eax, mmap_magic
+        jnz     read_mmap_end   ; if eax != mmap_magic, list end
+        cmp     ebx, 0          ; if ebx == 0, list end
+        jz      read_mmap_end
+        add     di, mmap_entry_size
+        jmp     read_mmap_entry
+        
+read_mmap_end:  
+        pop     es
+        
         ;; Prepare GDT
         cli
         mov     ax, [gdt_base]
         shr     ax, 4
-        push    ds
+        push    ds        
         mov     ds, ax
-        mov     si, 0
+        xor     si, si
         ;; Null descriptor
         mov     [ds:si], dword 0 
         mov     [ds:si+4], dword 0
@@ -182,8 +216,11 @@ goto_next_track:
         mov     gs, ax
         mov     ss, ax
 
+
+        xchg    bx,bx
         ;; Load kernel
-        jmp dword 0x8:kernel_start ; use Ring0 code descriptor
+        jmp     0x08:kernel_start        ; Ring0 code descriptor
+
         
 disk_fail:
         mov     bh, ah          ; save error code
@@ -215,8 +252,8 @@ copy_buffer:
         mov     es, [bp+4]      ; dst
         xor     ecx, ecx
         mov     cx, [bp+2]      ; number of bytes
-        mov     si, 0
-        mov     di, 0
+        xor     si, si
+        xor     di, di
         rep movsd               ; copy
         
         pop     cx

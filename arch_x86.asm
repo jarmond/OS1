@@ -2,9 +2,7 @@
 
 global outb
 global inb
-global print_char
 global bochs_break
-
         
 outb:
         push    ebp
@@ -23,16 +21,7 @@ inb:
         leave
         ret
 
-print_char:
-        push    ebp
-        mov     ebp, esp
-        mov     al, [ebp+8]     ; char to print
-        mov     ah, 0x0e        ; print char code
-        mov     bx, 0x07        ; grey on black, page zero
-        int     0x10            ; call BIOS text write
-        leave
-        ret
-        
 bochs_break:
         xchg    bx, bx
         ret
+
