@@ -20,12 +20,12 @@
 ;;; t0 h0 s1             bootloader
 ;;; t0 h0 s2..18         extended bootloader if needed
 ;;; t1..32 h0..1 s1..18  kernel
-        
+
         [bits 16]               ; 16-bit mode
         org     0
         jmp     start
         nop
-        
+
         ;; Data
         version         db      'jOS',13,10,0
         a20_error       db      'A20 err',13,10,0
@@ -44,7 +44,7 @@
         mmap_entry_size equ     24
         mmap_magic      equ     0x534d4150
 
-start:  
+start:
         mov     ax, 0x7c0       ; bootloaders loaded from 0x7c00
         mov     ds, ax          ; setup data segment
 
@@ -60,7 +60,7 @@ start:
         ;; Set video mode to 3
         mov     ax, 3
         int     0x10
-        
+
         ;; Clear screen
         call    clear_screen
 
@@ -69,7 +69,7 @@ start:
         mov     bh, 0
         xor     dx, dx
         int     0x10
-        
+
         ;; Print some infomation
         mov     si, version
         call    print_message
@@ -98,11 +98,11 @@ read_track:
         shl     cx, 8           ; track to read to ch
         mov     cl, 1           ; sector to start
         xor     bx, bx          ; segment offset
-read_head:      
+read_head:
         mov     ax, 0x0212      ; ah=0x02 (read sectors), al=18 sectors
         int     0x13
         jc      disk_fail
-        
+
         cmp     dh, 0           ; if head 0, do head 1
         jnz     goto_next_track
         inc     dh              ; set head 1
@@ -131,12 +131,12 @@ goto_next_track:
         shr     cx, 8           ; restore track counter
         inc     cx              ; move to next track
         cmp     cx, kernel_tracks
-        jnz     read_track      
+        jnz     read_track
 
         ;; Kernel loaded
         pop     ds
 
-        
+
         ;; Read memory map
         push    es
         mov     ax, mmap_start
@@ -145,7 +145,7 @@ goto_next_track:
         xor     ebx, ebx
         mov     edx, mmap_magic
 
-read_mmap_entry:       
+read_mmap_entry:
         mov     eax, 0xe820     ; memory detect function
         mov     ecx, mmap_entry_size
         int     0x15
@@ -159,19 +159,19 @@ read_mmap_entry:
         jz      read_mmap_end
         add     di, mmap_entry_size
         jmp     read_mmap_entry
-        
-read_mmap_end:  
+
+read_mmap_end:
         pop     es
-        
+
         ;; Prepare GDT
         cli
         mov     ax, [gdt_base]
         shr     ax, 4
-        push    ds        
+        push    ds
         mov     ds, ax
         xor     si, si
         ;; Null descriptor
-        mov     [ds:si], dword 0 
+        mov     [ds:si], dword 0
         mov     [ds:si+4], dword 0
 
         ;; Ring 0 Code descriptor
@@ -207,7 +207,7 @@ read_mmap_end:
         mov     eax, cr0
         or      eax, 1
         mov     cr0, eax
-        
+
         ;; Reload segment registers
         mov     ax, 0x10        ; Ring0 data descriptor
         mov     ds, ax
@@ -221,17 +221,17 @@ read_mmap_end:
         ;; Load kernel
         jmp     0x08:kernel_start        ; Ring0 code descriptor
 
-        
+
 disk_fail:
         mov     bh, ah          ; save error code
         mov     si, disk_error
         call    print_message
         jmp     idle
-        
+
 a20_fail:
         mov     si, a20_error
         call    print_message
-        
+
 idle:
         hlt
         jmp     idle
@@ -247,7 +247,7 @@ copy_buffer:
         push    ds
         push    es
         push    cx
-        
+
         mov     ds, [bp+6]      ; src
         mov     es, [bp+4]      ; dst
         xor     ecx, ecx
@@ -255,15 +255,15 @@ copy_buffer:
         xor     si, si
         xor     di, di
         rep movsd               ; copy
-        
+
         pop     cx
         pop     es
         pop     ds
         ret     6
 
-        
+
 ;;; Clear screen
-clear_screen:   
+clear_screen:
         mov     ax, 0x0700
         mov     bh, 0x07
         xor     cx, cx
@@ -281,12 +281,11 @@ print_message:
         mov     bx, 0x07        ; grey on black, page zero
         int     0x10
         jmp     print_message
-print_message_end:      
+print_message_end:
         ret
 
 
-        
+
         ;; Pad to 512 bytes
         times   510-($-$$) db 0 ; pad with zeros
         dw      0xaa55          ; boot signature
-        
