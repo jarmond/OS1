@@ -27,9 +27,10 @@
         nop
 
         ;; Data
-        version         db      'jOS',13,10,0
-        a20_error       db      'A20 err',13,10,0
-        disk_error      db      'Disk err ',13,10,0
+        version         db      'jOS',0
+        kernel_loaded   db      'kernel loaded!',0
+        a20_error       db      'A20 err',0
+        disk_error      db      'Disk err ',0
         drive_num       db      0
         gdt_limit       dw      39      ; 5 8-byte descriptors (n*8-1)
         gdt_base        dd      0x1000  ; base linear addr of GDT
@@ -70,7 +71,7 @@ start:
         xor     dx, dx
         int     0x10
 
-        ;; Print some infomation
+        ;; Print greeting
         mov     si, version
         call    print_message
 
@@ -109,12 +110,12 @@ read_head:
         add     bx, disk_buf_size/2   ; increment buffer offset
         jmp     read_head
 
+goto_next_track:
         ;; Print track dot
         mov     ax, 0x0e2e      ; ah=0x0e, al='.'
         mov     bx, 0x07
         int     0x10
 
-goto_next_track:
         ;; Copy track from disk buffer to kernel
         push    es              ; disk buffer
         push    ds              ; kernel
@@ -136,6 +137,8 @@ goto_next_track:
         ;; Kernel loaded
         pop     ds
 
+        mov     si, kernel_loaded
+        call    print_message
 
         ;; Read memory map
         push    es
