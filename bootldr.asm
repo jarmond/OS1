@@ -29,6 +29,7 @@
         ;; Data
         version         db      'jOS',0
         kernel_loaded   db      'kernel loaded!',0
+        start_message   db      13,10,'jmping...',0
         a20_error       db      'A20 err',0
         disk_error      db      'Disk err ',0
         drive_num       db      0
@@ -153,7 +154,6 @@ read_mmap_entry:
         mov     ecx, mmap_entry_size
         int     0x15
 
-        xchg    bx,bx
         jcxz    read_mmap_entry ; skip zero length entries
         jc      read_mmap_end   ; if CF set, list end
         cmp     eax, mmap_magic
@@ -219,8 +219,10 @@ read_mmap_end:
         mov     gs, ax
         mov     ss, ax
 
+        ;; Printing message
+        mov     si, start_message
+        call    print_message
 
-        xchg    bx,bx
         ;; Load kernel
         jmp     0x08:kernel_start        ; Ring0 code descriptor
 
