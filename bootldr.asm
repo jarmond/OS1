@@ -1,5 +1,5 @@
 ;;; Simple bootloader for jOS
-;;; (c)2012 J. W. Armond
+;;; (c)2017 J. W. Armond
 ;;; Written for NASM
 
 ;;; Memory map
@@ -17,6 +17,8 @@
 ;;; 000000-0003ff Real mode IVT
 
 ;;; Disk map
+;;; 80 tracks (t), 2 heads (h) and 18 sectors (s) per track
+;;; each sector = 512 bytes, 1.44 MB.
 ;;; t0 h0 s1             bootloader
 ;;; t0 h0 s2..18         extended bootloader if needed
 ;;; t1..32 h0..1 s1..18  kernel
@@ -29,7 +31,6 @@
         ;; Data
         version         db      'jOS',0
         kernel_loaded   db      'kernel loaded!',0
-        start_message   db      13,10,'jmping...',0
         a20_error       db      'A20 err',0
         disk_error      db      'Disk err ',0
         drive_num       db      0
@@ -218,10 +219,6 @@ read_mmap_end:
         mov     fs, ax
         mov     gs, ax
         mov     ss, ax
-
-        ;; Printing message
-        mov     si, start_message
-        call    print_message
 
         ;; Load kernel
         jmp     0x08:kernel_start        ; Ring0 code descriptor
