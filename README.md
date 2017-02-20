@@ -22,5 +22,5 @@ The OS is designed to map onto a (virtual) floppy disk with no filesystem.
 
 Bootloader is in bootldr.asm. It is designed to fit into the first sector of the disk (512 bytes). Space is left on the first track for loading an extended bootloader (not implemented). The kernel is installed on the remaining tracks.
 
-The bootloader sets the video mode and prints some wakeup message. It then loads the kernel track-by-track into memory (see bootldr.asm for memory map).
+The bootloader sets the video mode and prints some wakeup message. It then loads the kernel track-by-track into memory (see bootldr.asm for memory map). The floppy disk track is read using INT 13h into a disk buffer (18384 bytes, exactly 1 track), and then copied to location 0xf000.
 After loading the kernel, it enters protected mode and jumps to kernel start (0xf000).
