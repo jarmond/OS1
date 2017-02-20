@@ -1,10 +1,11 @@
 ;;; Assembly routines for jOS implementation.
 
-global outb
-global inb
-global bochs_break
-        
-outb:
+global _outb
+global _inb
+global _bochs_break
+
+section .text
+_outb:
         push    ebp
         mov     ebp, esp
         mov     dx, [ebp+8]     ; address
@@ -13,7 +14,7 @@ outb:
         leave
         ret
 
-inb:
+_inb:
         push    ebp
         mov     ebp, esp
         mov     dx, [ebp+8]     ; address
@@ -21,7 +22,7 @@ inb:
         leave
         ret
 
-bochs_break:
+_bochs_break:
         xchg    bx, bx
         ret
 
