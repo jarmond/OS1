@@ -1,17 +1,20 @@
-# Makefile for OS
+# Makefile for jOS
 
-CC=/Users/jon/oscross/bin/i586-elf-gcc
-LD=/Users/jon/oscross/bin/i586-elf-ld
-AS=nasm
+CC=gcc-6
+LD=ld
+AS=/usr/local/bin/nasm
 
 CFLAGS=-Wall -Wextra -Werror -m32 -nostdlib -fno-builtin -nostartfiles -nodefaultlibs
 
-
-CSRC=sys.c vga.c
+CSRC=sys.c vga.c kernel_main.c
 COBJ=$(CSRC:.c=.o)
 ASRC=arch_x86.asm
+AOBJ=$(ASRC:.asm=.o)
 
 all: boot
+
+%.o : %.c
+	${CC} -Wall -m32 -nostdlib -o $@ -c $<
 
 boot: boot.img
 
@@ -26,25 +29,13 @@ boot.img: bootldr kernel
 bootldr: bootldr.asm
 	${AS} -Wall -f bin -l $@.lst -o $@ bootldr.asm
 
-# Compile kernel main.
-#kernel_main: kernel_main.c
-#	${CC} -Wall -m32 -nostdlib -o $@.o -c $<
-
-
 # Compile kernel assembly.
-arch_x86: arch_x86.asm
-	${AS} -Wall -f elf32 -l $@.lst -o $@.o $<
-
+arch_x86: ${ASRC}
+	${AS} -Wall -f macho32 -l $@.lst -o $@.o $<
 
 # Compile kernel and strip header.
-kernel: kernel_main.o arch_x86 ${COBJ}
-	${LD} kernel_main.o arch_x86.o ${COBJ} -o $@.bin --oformat=binary -Ttext=0xf000 -e 0x0
-# Also make an ELF version to aid disassembly.
-	${LD} kernel_main.o arch_x86.o ${COBJ} -o $@.elf -Ttext=0xf000 -e 0x0
-
-#	${LD} kernel.o kernel_asm.o $(CSRC:.c=.o) -o $@_1.bin -U start -arch i386 -macosx_version_min 10.5 -segaddr _text 0x1000
-#	dd if=$@_1.bin of=$@.bin ibs=3776 skip=1
-
+kernel: arch_x86 ${COBJ}
+	${LD} arch_x86.o ${COBJ} -o $@.bin -r -U _main -arch i386 -macosx_version_min 10.10 -no_pie -segaddr _text 0x1000
 
 clean:
 	rm -f bootldr *.lst boot.img *.o *.bin
