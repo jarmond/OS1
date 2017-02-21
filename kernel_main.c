@@ -1,13 +1,15 @@
 /* Kernel C source. */
 
 #include "sys.h"
-#include "arch_x86.h"
+#include "bochs.h"
 
 void _start()
 {
-  char c='.';
+  bochs_print("Starting...");
+  kinit();
+
   while (1) {
-    outb((void*) 0xe9, c);
     kprint("Hello world\n");
   }
 }
+
