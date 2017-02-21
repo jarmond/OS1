@@ -1,4 +1,4 @@
-# jOS - Jon's operating system
+# OS1
 
 This a operating system project for the purposes of the self-learning.
 
@@ -24,3 +24,7 @@ Bootloader is in bootldr.asm. It is designed to fit into the first sector of the
 
 The bootloader sets the video mode and prints some wakeup message. It then loads the kernel track-by-track into memory (see bootldr.asm for memory map). The floppy disk track is read using INT 13h into a disk buffer (18384 bytes, exactly 1 track), and then copied to location 0xf000.
 After loading the kernel, it enters protected mode and jumps to kernel start (0xf000).
+
+
+
+- Jon Armond Feb' 2017

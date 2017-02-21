@@ -1,4 +1,5 @@
 #/bin/sh
+# source this file to set up development console for cross compiling
 
 CROSSDIR=$HOME/code/os/cross
 export CC=$CROSSDIR/bin/i686-elf-gcc

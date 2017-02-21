@@ -1,4 +1,4 @@
-/* VGA driver */
+/* OS1 VGA driver */
 
 #include "vga.h"
 

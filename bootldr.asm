@@ -1,4 +1,4 @@
-;;; Simple bootloader for jOS
+;;; Simple bootloader for OS1
 ;;; (c)2017 J. W. Armond
 ;;; Written for NASM
 
@@ -29,7 +29,7 @@
         nop
 
         ;; Data
-        version         db      'jOS',0
+        version         db      'OS1',0
         kernel_loaded   db      'kernel loaded!',0
         a20_error       db      'A20 err',0
         disk_error      db      'Disk err ',0

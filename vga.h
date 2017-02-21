@@ -1,6 +1,6 @@
 #ifndef VGA_H
 #define VGA_H
-/* VGA driver */
+/* OS1 VGA driver */
 
 void vga_initialize();
 void vga_print_char(char c);

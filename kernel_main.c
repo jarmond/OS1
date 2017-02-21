@@ -1,4 +1,4 @@
-/* Kernel C source. */
+/* OS1 kernel main loop. */
 
 #include "sys.h"
 #include "bochs.h"

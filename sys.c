@@ -1,4 +1,4 @@
-/* Kernel system calls. */
+/* OS1 kernel system calls. */
 
 #include "vga.h"
 #include "arch_x86.h"

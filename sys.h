@@ -1,6 +1,6 @@
 #ifndef SYS_H
 #define SYS_H
-/* Kernel system calls. */
+/* OS1 kernel system calls. */
 
 /* Initialize system. */
 void kinit();

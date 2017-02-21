@@ -1,4 +1,5 @@
 #!/bin/bash
+# This file compiles a GCC cross compiler toolchain.
 
 SRC=$HOME/src
 export PREFIX=$HOME/code/os/cross
