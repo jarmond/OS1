@@ -39,8 +39,7 @@
 
         kernel_tracks   equ     31
         kernel_seg      equ     0xf00
-        kernel_off      equ     0x0
-        kernel_start    equ     0xf000
+        kernel_start    equ     0x10000
         disk_buf        equ     0x800
         disk_buf_size   equ     0x4800
         mmap_start      equ     0x200
@@ -221,7 +220,7 @@ read_mmap_end:
         mov     ss, ax
 
         ;; Load kernel
-        jmp     0x08:kernel_start        ; Ring0 code descriptor
+        jmp dword 0x08:kernel_start   ; Ring0 code descriptor
 
 
 disk_fail:
