@@ -1,6 +1,6 @@
 /* Linker script for building kernel */
 
-kernelAddr = 0x1000;
+kernelAddr = 0x10000;
 ENTRY(_start)
 
 SECTIONS
