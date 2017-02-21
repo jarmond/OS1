@@ -1,9 +1,13 @@
 /* Kernel C source. */
 
 #include "sys.h"
+#include "arch_x86.h"
 
-void __start()
+void _start()
 {
-    while (1)
-        kprint("Hello world\n");
+  char c='.';
+  while (1) {
+    outb((void*) 0xe9, c);
+    kprint("Hello world\n");
+  }
 }

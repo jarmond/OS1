@@ -1,7 +1,7 @@
 # Makefile for jOS
 
-CC=gcc-6
-LD=ld
+CC=/Users/jon/code/os/cross/bin/i686-elf-gcc
+LD=/Users/jon/code/os/cross/bin/i686-elf-ld
 AS=/usr/local/bin/nasm
 
 CFLAGS=-Wall -Wextra -Werror -m32 -nostdlib -fno-builtin -nostartfiles -nodefaultlibs
@@ -14,7 +14,7 @@ AOBJ=$(ASRC:.asm=.o)
 all: boot
 
 %.o : %.c
-	${CC} -g -Wall -march=i386 -m32 -nostdlib -o $@ -c $<
+	${CC} -g -Wall -ffreestanding -o $@ -c $<
 
 boot: boot.img
 
@@ -31,13 +31,11 @@ bootldr: bootldr.asm
 
 # Compile kernel assembly.
 arch_x86: ${ASRC}
-	${AS} -Wall -f macho32 -l $@.lst -o $@.o $<
+	${AS} -Wall -f elf32 -l $@.lst -o $@.o $<
 
 # Compile kernel and strip header.
 kernel: arch_x86 ${COBJ}
-	${LD} ${COBJ} arch_x86.o -o $@_1.bin -r -U _main -arch i386 -macosx_version_min 10.10 -no_pie -segaddr _text 0x1000
-# Strip header from above so _start function is first byte.
-	dd if=$@_1.bin of=$@.bin ibs=496 skip=1
+	${CC} -T link.ld ${COBJ} ${AOBJ} -o $@.bin -nostdlib -ffreestanding -lgcc
 
 clean:
 	rm -f bootldr *.lst boot.img *.o *.bin
