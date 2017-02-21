@@ -1,4 +1,4 @@
-;;; Assembly routines for jOS implementation.
+;;; Assembly routines for OS1 implementation.
 
 global outb
 global inb
@@ -20,9 +20,5 @@ inb:
         mov     dx, [ebp+8]     ; address
         in      al, dx          ; receive byte
         leave
-        ret
-
-bochs_break:
-        xchg    bx, bx
         ret
 
