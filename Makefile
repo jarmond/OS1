@@ -15,7 +15,7 @@ AOBJ=$(ASRC:.asm=.o)
 all: boot
 
 %.o : %.c
-	${CC} -g -Wall -ffreestanding -o $@ -c $<
+	${CC} -ggdb -Wall -ffreestanding -o $@ -c $<
 
 boot: boot.img
 
@@ -36,7 +36,7 @@ arch_x86: ${ASRC}
 
 # Compile kernel and strip header.
 kernel: arch_x86 ${COBJ}
-	${CC} -T link.ld ${COBJ} ${AOBJ} -o $@.bin -nostdlib -ffreestanding -lgcc
+	${CC} -T link.ld ${COBJ} ${AOBJ} -ggdb -o $@.bin -nostdlib -ffreestanding -lgcc
 
 clean:
 	rm -f bootldr *.lst boot.img *.o *.bin
