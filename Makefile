@@ -6,7 +6,8 @@ AS=/usr/local/bin/nasm
 
 CFLAGS=-Wall -Wextra -Werror -m32 -nostdlib -fno-builtin -nostartfiles -nodefaultlibs
 
-CSRC=kernel_main.c sys.c vga.c # kernel is first to put _start at beginning.
+# kernel is first to put _start at beginning.
+CSRC=kernel_main.c sys.c vga.c bochs.c
 COBJ=$(CSRC:.c=.o)
 ASRC=arch_x86.asm
 AOBJ=$(ASRC:.asm=.o)
