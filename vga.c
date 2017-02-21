@@ -61,6 +61,22 @@ void vga_put(char c, uint8_t colour, size_t column, size_t row)
     vga_buffer[column + row * VGA_COLUMNS] = vc;
 }
 
+/* Scrolls up by one line, leaving new blank line. */
+void vga_scroll()
+{
+    // Copy VGA_ROWS-1 lines.
+    for (size_t i=1; i<VGA_ROWS-1; i++) {
+        for (size_t j=0; j<VGA_COLUMNS; j++) {
+            vga_buffer[j + (i-1)*VGA_COLUMNS] = vga_buffer[j + i*VGA_COLUMNS];
+        }
+    }
+
+    // Blank last line.
+    for (size_t j=0; j<VGA_COLUMNS; j++) {
+        vga_buffer[j + (VGA_ROWS-1)*VGA_COLUMNS] = ' ';
+    }
+}
+
 void vga_initialize()
 {
     vga_column = 0;
@@ -86,8 +102,10 @@ void vga_print_char(char c)
 void vga_new_line()
 {
     vga_column = 0;
-    if (++vga_row >= VGA_ROWS)
-        vga_row = 0;
+    if (++vga_row >= VGA_ROWS) {
+        vga_scroll();
+        vga_row--;
+    }
 }
 
 void vga_enable_cursor()
