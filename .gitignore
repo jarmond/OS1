@@ -8,3 +8,4 @@ bootldr
 *.txt
 *.out
 *.elf
+cross/
